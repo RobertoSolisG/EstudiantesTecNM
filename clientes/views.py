@@ -16,32 +16,63 @@ def clientes(request):
 
     # Create your views here.
 
+from django.shortcuts import render
+from django.db.models import Count
+from .models import Table_Est_TecNM
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
 def estudiantes(request):
-    total = Table_Est_TecNM.objects.count()
+    # Obtener todos los datos
+    estudiantes = Table_Est_TecNM.objects.all()
 
-    por_actividad = Table_Est_TecNM.objects.values('ACTIVIDAD').annotate(y=Count('ACTIVIDAD')).order_by('-y')
-    por_institucion = Table_Est_TecNM.objects.values('INSTITUTO').annotate(y=Count('INSTITUTO')).order_by('-y')
-    por_sede = Table_Est_TecNM.objects.values('SEDE').annotate(y=Count('SEDE'))
-    por_modalidad = Table_Est_TecNM.objects.values('MODALIDAD').annotate(y=Count('MODALIDAD'))
-    por_edad = Table_Est_TecNM.objects.values('EDAD').annotate(y=Count('EDAD')).order_by('EDAD')
-    genero = Table_Est_TecNM.objects.values('GENERO').annotate(y=Count('GENERO'))
-    carrera = Table_Est_TecNM.objects.values('CARRERA').annotate(y=Count('CARRERA'))
-    area = Table_Est_TecNM.objects.values('AREA').annotate(y=Count('AREA')).order_by('-y')
-    tipos_disca = Table_Est_TecNM.objects.values('TIPO').annotate(y=Count('TIPO')).order_by('-y')
+    # Obtener todas las actividades únicas
+    actividades = estudiantes.values_list('actividad', flat=True).distinct()
 
-    def formatea(lista, clave):
-        return [{"name": e[clave], "y": e["y"]} for e in lista if e[clave]]
+    # Función para contar agrupaciones
+    def contar(estudiantes_queryset, campo):
+        resultado = (
+            estudiantes_queryset
+            .values(campo)
+            .exclude(**{campo: None})
+            .annotate(total=Count(campo))
+            .order_by('-total')
+        )
+        return [[r[campo], r['total']] for r in resultado if r[campo]]
 
-    context = {
-        "total_estudiantes": total,
-        "por_actividad": json.dumps(formatea(por_actividad, 'ACTIVIDAD')),
-        "por_institucion": json.dumps(formatea(por_institucion, 'INSTITUTO')),
-        "por_sede": json.dumps(formatea(por_sede, 'SEDE')),
-        "por_modalidad": json.dumps(formatea(por_modalidad, 'MODALIDAD')),
-        "por_edad": json.dumps(formatea(por_edad, 'EDAD')),
-        "genero": json.dumps(formatea(genero, 'GENERO')),
-        "carrera": json.dumps(formatea(carrera, 'CARRERA')),
-        "area": json.dumps(formatea(area, 'AREA')),
-        "tipos_disca": json.dumps(formatea(tipos_disca, 'TIPO')),
+    # Función para construir la estructura por actividad
+    datos_por_actividad = {}
+
+    for actividad in actividades:
+        filtro = estudiantes.filter(actividad=actividad)
+        datos_por_actividad[actividad] = {
+            'actividad': contar(filtro, 'actividad'),
+            'institucion': contar(filtro, 'instituto'),
+            'sede': contar(filtro, 'sede'),
+            'modalidad': contar(filtro, 'modalidad'),
+            'edad': contar(filtro, 'edad'),
+            'genero': contar(filtro, 'genero'),
+            'carrera': contar(filtro, 'carrera'),
+            'area': contar(filtro, 'area'),
+            'tipos_disca': contar(filtro, 'discapacidad'),
+        }
+
+    # También agregamos la agrupación "Todas"
+    datos_por_actividad["Todas"] = {
+        'actividad': contar(estudiantes, 'actividad'),
+        'institucion': contar(estudiantes, 'instituto'),
+        'sede': contar(estudiantes, 'sede'),
+        'modalidad': contar(estudiantes, 'modalidad'),
+        'edad': contar(estudiantes, 'edad'),
+        'genero': contar(estudiantes, 'genero'),
+        'carrera': contar(estudiantes, 'carrera'),
+        'area': contar(estudiantes, 'area'),
+        'tipos_disca': contar(estudiantes, 'discapacidad'),
     }
-    return render(request, 'ficha.html', context)
+
+    contexto = {
+        'datos_por_actividad': json.dumps(datos_por_actividad, cls=DjangoJSONEncoder),
+        'actividades_disponibles': [a for a in actividades if a],  # excluye None o vacío
+    }
+
+    return render(request, 'ficha.html', contexto)

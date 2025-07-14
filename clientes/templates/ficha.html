@@ -4,317 +4,259 @@
 <head>
     <meta charset="UTF-8">
     <title>Ficha de Información - Escuela de Código</title>
+
+    <!-- Highcharts Core & Exporting -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+    <!-- html2pdf.js para exportar a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
-
-        .header {
-            background-color: #6e0032;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .total {
-            text-align: right;
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        .chart-container {
-            margin-bottom: 50px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
         }
 
         .encabezado {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 15px 30px;
+            padding: 20px 40px;
+            background-color: white;
+            border-bottom: 2px solid #eee;
         }
 
         .encabezado-texto {
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        color: #6e0032; /* color vino */
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #6e0032;
         }
 
         .encabezado img {
             height: 60px;
         }
 
+        .contenedor-principal {
+            padding: 30px 50px;
+        }
 
+        .filtro {
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .filtro label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .graficas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+            padding: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .chart-card:hover {
+            transform: scale(1.01);
+        }
+
+        #descargarPDF {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #6e0032;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        select {
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
     </style>
- </head>
-
-  <div class="encabezado">
-        <!-- Imagen izquierda -->
+</head>
+<body>
+    <div class="encabezado">
         <img src="{% static 'media/escuela logo.png' %}" alt="Logo Izquierdo">
-
-        <!-- Texto centrado -->
-        <div class="encabezado-texto">
-            Ficha de Información de estudiantes de TecNM
-        </div>
-
-        <!-- Imagen derecha -->
+        <div class="encabezado-texto">Ficha de Información de estudiantes de TecNM</div>
         <img src="{% static 'media/Infotec_final.png' %}" alt="Logo Derecho">
     </div>
 
+    <div class="contenedor-principal" id="contenido-a-exportar">
+        <div class="filtro">
+            <label for="filtro_actividad">Filtrar por Actividad:</label>
+            <select id="filtro_actividad">
+                <option value="Todas">Todas</option>
+                {% for act in actividades_disponibles %}
+                    <option value="{{ act }}">{{ act }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-
-<body>
-   
-
-    <div class="chart-container"  id="por_actividad" style="height: 400px;"></div>
-
-         <div class="encabezado-texto">
-             <strong>Total de estudiantes:</strong> {{ total_estudiantes }}
+        <div class="graficas-grid">
+            <div class="chart-card"><div id="por_actividad" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_institucion" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_sede" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_modalidad" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_edad" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_genero" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_carrera" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="por_area" style="height: 350px;"></div></div>
+            <div class="chart-card"><div id="tipos_disca" style="height: 350px;"></div></div>
         </div>
     </div>
 
-    <div class="header">
-       ¿Cuál es su institución de origen de los estudiantes?
-    </div>
+    <button id="descargarPDF">Descargar Informe PDF</button>
 
-    <div class="chart-container" id="por_institucion" style="height: 400px;"></div>
-
-    <div class="header">
-       ¿Cuál es el tipo de vínculo con la Escuela de Código Abierto?
-    </div>
-
-    <div class="chart-container" id="por_sede" style="height: 400px;"></div>
-    <div class="chart-container" id="por_modalidad" style="height: 300px;"></div>
-
-    <div class="header">
-       ¿Cómo son los estudiantes?
-    </div>
-
-
-    <div class="chart-container" id="por_edad" style="height: 300px;"></div>
-    <div class="chart-container" id="por_genero" style="height: 400px;"></div>
-    <div class="chart-container" id="por_carrera" style="height: 400px;"></div>
-    <div class="chart-container" id="por_area" style="height: 400px;"></div>
-    <div class="chart-container" id="tipos_disca" style="height: 400px;"></div>
     <script>
+        const datosPorActividad = {{ datos_por_actividad|safe }};
+        const selectActividad = document.getElementById('filtro_actividad');
 
-        Highcharts.chart('por_actividad', {
-            chart: { type: 'pie' },
-            title: { text: 'Porcentaje de Estudiantes por Actividad' },
-            colors: ['#6e0032', '#8c1c3a', '#a43752', '#bf5270', '#d96c8e'],  // tonos vino
-            tooltip: { pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)' },
-            accessibility: { point: { valueSuffix: '%' }},
+        const coloresInstitucionales = [
+            '#6e0032', '#8c1c4b', '#a63a63', '#c7587a',
+            '#de6f91', '#f18aa8', '#f5a2bb', '#fbc0d3', '#fde0e7'
+        ];
+
+        const opcionesPie = {
+            colors: coloresInstitucionales,
+            exporting: { enabled: true },
             plotOptions: {
-            pie: {
-            dataLabels: {
-                enabled: true,
-                format: '<b>{point.y}</b> ({point.percentage:.1f}%)'
-            },
-            showInLegend: true
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.name}: {point.percentage:.1f} %',
+                        style: { fontWeight: 'bold', color: '#333' }
+                    }
+                }
             }
-            },
-            series: [{
-                name: 'Estudiantes',
-                data: {{ por_actividad|safe }}
-            }]
-        });
+        };
 
-        Highcharts.chart('por_institucion', {
-            chart: { type: 'column' },
-            title: { text: 'Porcentaje de estudiantes por Institución' },
-            xAxis: { type: 'category', title: { text: 'Institución' } },
-            yAxis: { title: { text: 'Número de estudiantes' } },
-            tooltip: {
-                formatter: function () {
-                var total = this.series.data.reduce(function (sum, point) {
-                return sum + point.y;
-                }, 0);
-                var percentage = (this.y / total * 100).toFixed(1);
-                return '<b>' + this.point.name + '</b><br>' +
-                   'Estudiantes: ' + this.y + '<br>' +
-                   'Porcentaje: ' + percentage + '%';
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                color: '#d8a84b',
-                data: {{ por_institucion|safe }}
-            }]
-        });
-
-        Highcharts.chart('por_sede', {
-            chart: { type: 'pie' },
-            title: { text: 'Porcentaje de Estudiantes por SEDE' },
-            colors: ['#6e0032', '#8c1c3a', '#a43752', '#bf5270', '#d96c8e'],  // tonos vino
-            tooltip: { pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)' },
-            accessibility: { point: { valueSuffix: '%' }},
+        const opcionesColumn = {
+            colors: coloresInstitucionales,
+            exporting: { enabled: true },
             plotOptions: {
-            pie: {
-            dataLabels: {
-                enabled: true,
-                format: '<b>{point.y}</b> ({point.percentage:.1f}%)'
+                column: {
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.y}',
+                        style: { color: '#000' }
+                    }
+                }
             },
-            showInLegend: true
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                data: {{ por_sede|safe }}
-            }]
-        });
+            xAxis: { type: 'category' },
+            yAxis: { title: { text: 'Estudiantes' } }
+        };
 
-        Highcharts.chart('por_modalidad', {
-            chart: { type: 'column' },
-            title: { text: 'Porcentaje de Estudiantes por Modalidad' },
-            xAxis: { type: 'category', title: { text: 'Modalidad' } },
-            yAxis: { title: { text: 'Número de estudiantes' } },
-            tooltip: {
-                formatter: function () {
-                var total = this.series.data.reduce(function (sum, point) {
-                return sum + point.y;
-                }, 0);
-                var percentage = (this.y / total * 100).toFixed(1);
-                return '<b>' + this.point.name + '</b><br>' +
-                   'Estudiantes: ' + this.y + '<br>' +
-                   'Porcentaje: ' + percentage + '%';
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                color: '#d8a84b',
-                data: {{ por_modalidad|safe }}
-            }]
-        });
-
-        Highcharts.chart('por_edad', {
-            chart: { type: 'column' },
-            title: { text: 'Porcentaje de Estudiantes por edad' },
-            xAxis: { type: 'category', title: { text: 'Edad' } },
-            yAxis: { title: { text: 'Número de estudiantes' } },
-            tooltip: {
-                formatter: function () {
-                var total = this.series.data.reduce(function (sum, point) {
-                return sum + point.y;
-                }, 0);
-                var percentage = (this.y / total * 100).toFixed(1);
-                return '<b>' + this.point.name + '</b><br>' +
-                   'Estudiantes: ' + this.y + '<br>' +
-                   'Porcentaje: ' + percentage + '%';
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                color: '#d8a84b',
-                data: {{ por_edad|safe }}
-            }]
-        });
-
-
-        Highcharts.chart('por_genero', {
+        const chartActividad = Highcharts.chart('por_actividad', {
             chart: { type: 'pie' },
-            colors: ['#6e0032', '#8c1c3a', '#a43752', '#bf5270', '#d96c8e'],  // tonos vino
-            title: { text: 'Porcentaje de Estudiantes por Género' },
-            tooltip: { pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)' },
-            accessibility: { point: { valueSuffix: '%' }},
-            plotOptions: {
-            pie: {
-            dataLabels: {
-                enabled: true,
-                format: '<b>{point.y}</b> ({point.percentage:.1f}%)'
-            },
-            showInLegend: true
-            }
-            },
-            series: [{
-            name: 'Estudiantes',
-            data: {{ genero|safe }}
-            }]
+            title: { text: 'Actividad' },
+            ...opcionesPie,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['actividad'] }]
         });
 
-        
-        Highcharts.chart('por_carrera', {
+        const chartInstitucion = Highcharts.chart('por_institucion', {
             chart: { type: 'column' },
-            title: { text: 'Porcentaje de Estudiantes por Carrera' },
-            xAxis: { type: 'category', title: { text: 'Carrera' } },
-            yAxis: { title: { text: '% Estudiantes' }},
-            tooltip: {
-                formatter: function () {
-                var total = this.series.data.reduce(function (sum, point) {
-                return sum + point.y;
-                }, 0);
-                var percentage = (this.y / total * 100).toFixed(1);
-                return '<b>' + this.point.name + '</b><br>' +
-                   'Estudiantes: ' + this.y + '<br>' +
-                   'Porcentaje: ' + percentage + '%';
-            }
-            }, 
-            series: [{
-            name: 'Estudiantes',
-            color: '#d8a84b',
-            data: {{ carrera|safe }}
-            }]
-            });
-
-
-        Highcharts.chart('por_area', {
-            chart: { type: 'column' },
-            title: { text: 'Porcentaje de Estudiantes por Área' },
-            xAxis: { type: 'category', title: { text: 'Área' } },
-            yAxis: { title: { text: '% Estudiantes' }},
-            tooltip: {
-                formatter: function () {
-                var total = this.series.data.reduce(function (sum, point) {
-                return sum + point.y;
-                }, 0);
-                var percentage = (this.y / total * 100).toFixed(1);
-                return '<b>' + this.point.name + '</b><br>' +
-                   'Estudiantes: ' + this.y + '<br>' +
-                   'Porcentaje: ' + percentage + '%';
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                color: '#e9bc6c',
-                data: {{ area|safe }}
-            }]
+            title: { text: 'Institución' },
+            ...opcionesColumn,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['institucion'] }]
         });
 
-        Highcharts.chart('tipos_disca', {
+        const chartSede = Highcharts.chart('por_sede', {
             chart: { type: 'pie' },
-            title: { text: 'Porcentaje de Estudiantes por Tipo de discapacidad' },
-            colors: ['#6e0032', '#8c1c3a', '#a43752', '#bf5270', '#d96c8e'],  // tonos vino
-            tooltip: {
-                pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)'
-            },
-            accessibility: { point: { valueSuffix: '%' }},
-            plotOptions: {
-            pie: {
-                dataLabels: {
-                enabled: true,
-                format: '<b>{point.y}</b> ({point.percentage:.1f}%)'
-            },
-            showInLegend: true
-            }
-            },
-            series: [{
-                name: 'Estudiantes',
-                data: {{ tipos_disca|safe }}
-            }]
+            title: { text: 'Sede' },
+            ...opcionesPie,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['sede'] }]
         });
 
+        const chartModalidad = Highcharts.chart('por_modalidad', {
+            chart: { type: 'column' },
+            title: { text: 'Modalidad' },
+            ...opcionesColumn,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['modalidad'] }]
+        });
 
+        const chartEdad = Highcharts.chart('por_edad', {
+            chart: { type: 'column' },
+            title: { text: 'Edad' },
+            ...opcionesColumn,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['edad'] }]
+        });
 
+        const chartGenero = Highcharts.chart('por_genero', {
+            chart: { type: 'pie' },
+            title: { text: 'Género' },
+            ...opcionesPie,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['genero'] }]
+        });
 
+        const chartCarrera = Highcharts.chart('por_carrera', {
+            chart: { type: 'column' },
+            title: { text: 'Carrera' },
+            ...opcionesColumn,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['carrera'] }]
+        });
 
+        const chartArea = Highcharts.chart('por_area', {
+            chart: { type: 'column' },
+            title: { text: 'Área' },
+            ...opcionesColumn,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['area'] }]
+        });
 
+        const chartDiscapacidad = Highcharts.chart('tipos_disca', {
+            chart: { type: 'pie' },
+            title: { text: 'Tipo de discapacidad' },
+            ...opcionesPie,
+            series: [{ name: 'Estudiantes', data: datosPorActividad['Todas']['tipos_disca'] }]
+        });
 
+        selectActividad.addEventListener('change', function () {
+            const act = this.value;
+            const datos = datosPorActividad[act] || {};
 
+            chartActividad.series[0].setData(datos['actividad'] || []);
+            chartInstitucion.series[0].setData(datos['institucion'] || []);
+            chartSede.series[0].setData(datos['sede'] || []);
+            chartModalidad.series[0].setData(datos['modalidad'] || []);
+            chartEdad.series[0].setData(datos['edad'] || []);
+            chartGenero.series[0].setData(datos['genero'] || []);
+            chartCarrera.series[0].setData(datos['carrera'] || []);
+            chartArea.series[0].setData(datos['area'] || []);
+            chartDiscapacidad.series[0].setData(datos['tipos_disca'] || []);
+        });
+
+        document.getElementById('descargarPDF').addEventListener('click', function () {
+            const contenido = document.querySelector('#contenido-a-exportar');
+            const options = {
+                margin:       0.5,
+                filename:     'informe_estudiantes_tecnm.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(contenido).set(options).save();
+        });
     </script>
-
 </body>
 </html>
