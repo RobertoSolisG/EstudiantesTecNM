@@ -25,8 +25,8 @@ SECRET_KEY = 'django-insecure-ucc3l77_#^9bo#myl9tm712c8f9_x42p3k%3)@p+ar6wm+y7-f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-##ALLOWED_HOSTS = ['207.249.96.155', 'localhost']
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['207.249.96.155', 'localhost']
+#ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -130,10 +130,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-##STATICFILES_DIRS = [
-##    BASE_DIR / "static"
-##    
-##] #se agrega para conf. archivo estático JSON
+STATICFILES_DIRS = [
+    BASE_DIR / "static"
+    
+] #se agrega para conf. archivo estático JSON
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
